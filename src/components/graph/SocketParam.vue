@@ -2,7 +2,7 @@
   <!-- <div class="socket" :title="data.name"></div> -->
   <div class="socket-param">
     <svg width="20px" height="20px">
-      <circle cx="10" cy="10" r="8" fill="pink" stroke="black" stroke-width="1" />
+      <circle cx="10" cy="10" r="7" :fill="data.color" stroke="black" stroke-width="1" />
     </svg>
   </div>
 </template>
@@ -23,14 +23,17 @@ export default {
   padding: $socket-margin;
   display: inline-flex;
 }
+
 .svg {
   stroke: white;
   fill: #ffffff47;
   stroke-width: 1px;
   stroke-linejoin: round;
+
   :hover {
     stroke-width: 5px;
   }
+
   width: 20px;
   height: 20px;
 }

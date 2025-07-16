@@ -12,9 +12,9 @@
         :content="data.meta.description"
         placement="top"
       >
-        <span><i class="el-icon-question"></i></span>
+        <span style="color: grey;"><i class="el-icon-question"></i></span>
       </el-tooltip>
-      <span>{{ data.meta.displayName || data.meta.name }}</span>
+      <span style="font-weight: bold;">{{ data.meta.displayName || data.meta.name }}</span>
     </div>
     <div class="columns">
       <div class="column">
@@ -229,7 +229,8 @@ export default {
   }
   .input-title,
   .output-title {
-    font-size: 14px;
+    font-size: 12px;
+    font-weight: bold;
     text-overflow: ellipsis;
     overflow: hidden;
   }

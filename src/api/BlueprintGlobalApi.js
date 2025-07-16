@@ -14,9 +14,9 @@ export function functionDefinition() {
     })
 }
 
-export function controlFlowDefinition() {
+export function controlDefinition() {
     return request({
-        url: '/blueprint/global/controlFlowDefinition',
+        url: '/blueprint/global/controlDefinition',
         method: 'post',
     })
 }

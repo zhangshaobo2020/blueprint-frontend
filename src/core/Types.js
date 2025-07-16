@@ -9,26 +9,28 @@ class Node extends ClassicPreset.Node {
 
 class Connection extends ClassicPreset.Connection { }
 
-class Socket extends ClassicPreset.Socket { }
+class Socket extends ClassicPreset.Socket {
+    constructor(name, color = "#000000") {
+        super(name);
+        Object.assign(this, { color });
+    }
+}
 
 class Input extends ClassicPreset.Input {
     constructor(socket, label, multipleConnections = false) {
         super(socket, label, multipleConnections);
-        // Object.assign(this, { control_ref: undefined })
     }
 }
 
 class Output extends ClassicPreset.Output {
     constructor(socket, label, multipleConnections = false) {
         super(socket, label, multipleConnections);
-        // Object.assign(this, { control_ref: undefined })
     }
 }
 
 class Control extends ClassicPreset.Control {
     constructor() {
         super();
-        // Object.assign(this, { input_ref: undefined, output_ref: undefined })
     }
 }
 

@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-button @click="testPure">测试Pure</el-button>
-    <el-button @click="testExec">测试Exce</el-button>
+    <el-button @click="testExec">测试Exec</el-button>
     <div ref="TestEditor" style="width: 100%; height: 90vh"></div>
     <div v-if="editor">{{ editor.getConnections() }}</div>
   </div>
@@ -19,12 +19,12 @@ export default {
     };
   },
   async created() {
-    const { data: controlFlowDef } = await GlobalApi.controlFlowDefinition();
-    this.$store.commit("overrideControlFlowDefinition", controlFlowDef);
+    const { data: controlDef } = await GlobalApi.controlDefinition();
+    this.$store.commit("overrideControlDef", controlDef);
     const { data: typeDef } = await GlobalApi.typeDefinition();
-    this.$store.commit("overrideTypeDefinition", typeDef);
+    this.$store.commit("overrideTypeDef", typeDef);
     const { data: functionDef } = await GlobalApi.functionDefinition();
-    this.$store.commit("overrideFunctionDefinition", functionDef);
+    this.$store.commit("overrideFunctionDef", functionDef);
     initializeDefinition();
   },
   mounted() {
@@ -38,12 +38,11 @@ export default {
       await this.editor.addNode(node);
     },
     async testExec() {
-      const node = customNode("ControlFlow.IfElse", this.editor);
+      const node = customNode("Control.IfElse", this.editor);
       await this.editor.addNode(node);
     },
   },
 };
 </script>
 
-<style>
-</style>
+<style></style>

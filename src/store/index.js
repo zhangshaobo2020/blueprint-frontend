@@ -5,39 +5,39 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    typeDefinition: {},
-    functionDefinition: {},
-    controlFlowDefinition: {}
+    typeDef: {},
+    functionDef: {},
+    controlDef: {}
   },
   getters: {
-    typeDefinition(state) {
-      return state.typeDefinition
+    typeDef(state) {
+      return state.typeDef
     },
-    findTypeDefinition: (state) => (qualifiedName) => {
-      return state.typeDefinition[qualifiedName]
+    findTypeDef: (state) => (qualifiedName) => {
+      return state.typeDef[qualifiedName]
     },
-    functionDefinition(state) {
-      return state.functionDefinition
+    functionDef(state) {
+      return state.functionDef
     },
-    findFunctionDefinition: (state) => (qualifiedName) => {
-      return state.functionDefinition[qualifiedName]
+    findFunctionDef: (state) => (qualifiedName) => {
+      return state.functionDef[qualifiedName]
     },
-    controlFlowDefinition(state) {
-      return state.controlFlowDefinition
+    controlDef(state) {
+      return state.controlDef
     },
-    findControlFlowDefinition: (state) => (qualifiedName) => {
-      return state.controlFlowDefinition[qualifiedName]
+    findControlDef: (state) => (qualifiedName) => {
+      return state.controlDef[qualifiedName]
     },
   },
   mutations: {
-    overrideTypeDefinition(state, payload) {
-      state.typeDefinition = payload
+    overrideTypeDef(state, payload) {
+      state.typeDef = payload
     },
-    overrideFunctionDefinition(state, payload) {
-      state.functionDefinition = payload
+    overrideFunctionDef(state, payload) {
+      state.functionDef = payload
     },
-    overrideControlFlowDefinition(state, payload) {
-      state.controlFlowDefinition = payload
+    overrideControlDef(state, payload) {
+      state.controlDef = payload
     }
   },
   actions: {

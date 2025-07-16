@@ -3,7 +3,7 @@
   <div class="socket-exec">
     <svg width="20px" height="20px">
       <path
-        d="M1,1 L10,1 L19,10 L10,19 L1,19 Z"
+        d="M3,3 L10,3 L17,10 L10,17 L3,17 Z"
         fill="lightgray"
         stroke="black"
         stroke-width="1"
