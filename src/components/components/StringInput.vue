@@ -1,5 +1,5 @@
 <template>
-  <el-input @input="onInput" @pointerdown.native.stop v-model="value" :disabled="doesInputConnected()"
+  <el-input @input="onChange" @pointerdown.native.stop v-model="value" :disabled="doesInputConnected()"
     v-show="!doesInputConnected()">
   </el-input>
 </template>
@@ -17,8 +17,8 @@ export default {
     },
   },
   methods: {
-    onInput(val) {
-      this.data.onInput(val);
+    onChange(val) {
+      this.data.onChange(val);
     },
     doesInputConnected() {
       for (const connection of this.data.editor.getConnections()) {

@@ -6,6 +6,8 @@ import {
 } from "rete-connection-plugin";
 import { VuePlugin, Presets } from "rete-vue-plugin/vue2";
 
+import { ContextMenuPlugin, Presets as ContextMenuPresets } from "rete-context-menu-plugin";
+
 import { StringInputControl, StringInput } from "@/components/controls/StringInputControl"
 import { FloatInputControl, FloatInput } from "@/components/controls/FloatInputControl"
 import { DoubleInputControl, DoubleInput } from "@/components/controls/DoubleInputControl"
@@ -22,39 +24,59 @@ import store from '@/store'
 import { Node, Input, Output, Socket } from "@/core/Types"
 
 import "@/assets/background.css";
+import * as GlobalApi from "@/api/BlueprintGlobalApi";
 
 const socket_exec = new Socket("SocketExec", "#ffffff");
 // const socket_param = new Socket("SocketParam", "#ffffff");
-// const socket_param_byte = new Socket("SocketParam", "#C9D400");
-// const socket_param_short = new Socket("SocketParam", "#B5D334");
-const socket_param_integer = new Socket("SocketParam", "#B8B42D");
-const socket_param_long = new Socket("SocketParam", "#A99F00");
+// const socket_param_byte = new Socket("SocketParam", "#E67E22");
+// const socket_param_short = new Socket("SocketParam", "#D35400");
+const socket_param_integer = new Socket("SocketParam", "#F1C40F");
+const socket_param_long = new Socket("SocketParam", "#B7950B");
 
-const socket_param_float = new Socket("SocketParam", "#3DB8B8");
-const socket_param_double = new Socket("SocketParam", "#40E0D0");
-const socket_param_boolean = new Socket("SocketParam", "#EF476F");
-// const socket_param_character = new Socket("SocketParam", "#FF69B4");
+const socket_param_float = new Socket("SocketParam", "#1ABC9C");
+const socket_param_double = new Socket("SocketParam", "#16A085");
+const socket_param_boolean = new Socket("SocketParam", "#E74C3C");
+// const socket_param_character = new Socket("SocketParam", "#9B59B6");
 
-// const socket_param_string = new Socket("SocketParam", "#CD5CFF");
-// const socket_param_bigdecimal = new Socket("SocketParam", "#2EBFA5");
-// const socket_param_date = new Socket("SocketParam", "#1E90FF");
-// const socket_param_localdatetime = new Socket("SocketParam", "#4169E1");
+const socket_param_string = new Socket("SocketParam", "#8E44AD");
+// const socket_param_bigdecimal = new Socket("SocketParam", "#0E6655");
+// const socket_param_date = new Socket("SocketParam", "#3498DB");
+// const socket_param_localdatetime = new Socket("SocketParam", "#154360");
+
+const socket_param_list = new Socket("SocketParam", "#0040ff");
+const socket_param_map = new Socket("SocketParam", "#bb00ff");
+
+async function preSetupEditor(container) {
+    const values = await Promise.all([
+        GlobalApi.controlDefinition(),
+        GlobalApi.typeDefinition(),
+        GlobalApi.functionDefinition()
+    ])
+    store.commit("overrideControlDef", values[0].data);
+    store.commit("overrideTypeDef", values[1].data);
+    store.commit("overrideFunctionDef", values[2].data);
+    return setupEditor(container);
+}
 
 /**
  * 构造默认Editor
  */
 function setupEditor(container) {
-
     const editor = new NodeEditor();
     const area = new AreaPlugin(container);
     const connection = new ConnectionPlugin();
     const render = new VuePlugin();
 
+    const initializeDefinitionContextMenu = initializeDefinition(editor);
+    const contextMenu = new ContextMenuPlugin({
+        items: ContextMenuPresets.classic.setup(initializeDefinitionContextMenu)
+    });
+
     AreaExtensions.selectableNodes(area, AreaExtensions.selector(), {
         accumulating: AreaExtensions.accumulateOnCtrl(),
     });
 
-    // render.addPreset(Presets.classic.setup());
+    render.addPreset(Presets.contextMenu.setup({ delay: 50 }));
     render.addPreset(
         Presets.classic.setup({
             customize: {
@@ -98,10 +120,42 @@ function setupEditor(container) {
     );
 
     connection.addPreset(ConnectionPresets.classic.setup());
+    // 拦截连接事件
+    connection.addPipe(context => {
+        if (context.type === "connectioncreate") {
+            const { source, sourceOutput, target, targetInput } = context.data
+            const source_node = editor.getNode(source);
+            const source_output = source_node.outputs[sourceOutput];
+            const target_node = editor.getNode(target);
+            const target_input = target_node.inputs[targetInput];
+            // 判断引脚类型是否一致
+            if (source_output.socket.name !== target_input.socket.name) return
+            // 判断参数类型是否一致
+            if (source_output.socket.name === "SocketParam"
+                && target_input.socket.name === "SocketParam") {
+                if (source_output.meta.type.qualifiedName
+                    !== target_input.meta.type.qualifiedName) return
+                if (source_output.meta.type.list
+                    && target_input.meta.type.list) {
+                    if (source_output.meta.type.generics[0].qualifiedName
+                        !== target_input.meta.type.generics[0].qualifiedName) return
+                }
+                if (source_output.meta.type.map
+                    && target_input.meta.type.map) {
+                    if ((source_output.meta.type.generics[0].qualifiedName
+                        !== target_input.meta.type.generics[0].qualifiedName)
+                        || (source_output.meta.type.generics[1].qualifiedName
+                            !== target_input.meta.type.generics[1].qualifiedName)) return
+                }
+            }
+        }
+        return context
+    })
 
     editor.use(area);
     area.use(connection);
     area.use(render);
+    area.use(contextMenu);
 
     const background = document.createElement("div");
 
@@ -119,17 +173,51 @@ function setupEditor(container) {
     return { editor, area };
 }
 
+function buildNestedStructure(arr, editor) {
+    const root = [];
+
+    // 在 children 中查找节点，如果没有则创建
+    function findOrCreateNode(children, name) {
+        let node = children.find(([n]) => n === name);
+        if (!node) {
+            node = [name, []];
+            children.push(node);
+        }
+        return node;
+    }
+
+    arr.forEach(path => {
+        const parts = path.split('.');
+        let current = root;
+
+        parts.forEach((part, index) => {
+            const isLeaf = index === parts.length - 1;
+
+            if (isLeaf) {
+                // 叶子节点绑定 customNode("完整路径")
+                current.push([part, () => customNode(path, editor)]);
+            } else {
+                const node = findOrCreateNode(current, part);
+                current = node[1]; // 下钻到子数组
+            }
+        });
+    });
+
+    return root;
+}
+
 /**
  * TODO: 初始化type和function
  */
-function initializeDefinition() {
+function initializeDefinition(editor) {
+    return buildNestedStructure(Object.keys(store.getters.functionDef).map(k => k), editor);
 }
 
 function buildInputOutputControl(editor, node, param) {
     if (param.input) {
         // 创建输入引脚、控制
         if (param.type.qualifiedName === "java.lang.Integer") {
-            const param_input = new Input(socket_param_integer, param.name);
+            const param_input = new Input(socket_param_integer, param.name, param);
             node.addInput(param_input.id, param_input);
             const control_param_input = new IntegerInputControl({
                 value: 0,
@@ -143,7 +231,7 @@ function buildInputOutputControl(editor, node, param) {
             param_input.addControl(control_param_input);
         }
         if (param.type.qualifiedName === "java.lang.Long") {
-            const param_input = new Input(socket_param_long, param.name);
+            const param_input = new Input(socket_param_long, param.name, param);
             node.addInput(param_input.id, param_input);
             const control_param_input = new LongInputControl({
                 value: 0,
@@ -157,7 +245,7 @@ function buildInputOutputControl(editor, node, param) {
             param_input.addControl(control_param_input);
         }
         if (param.type.qualifiedName === "java.lang.Float") {
-            const param_input = new Input(socket_param_float, param.name);
+            const param_input = new Input(socket_param_float, param.name, param);
             node.addInput(param_input.id, param_input);
             const control_param_input = new FloatInputControl({
                 value: 0,
@@ -171,7 +259,7 @@ function buildInputOutputControl(editor, node, param) {
             param_input.addControl(control_param_input);
         }
         if (param.type.qualifiedName === "java.lang.Double") {
-            const param_input = new Input(socket_param_double, param.name);
+            const param_input = new Input(socket_param_double, param.name, param);
             node.addInput(param_input.id, param_input);
             const control_param_input = new DoubleInputControl({
                 value: 0,
@@ -185,7 +273,7 @@ function buildInputOutputControl(editor, node, param) {
             param_input.addControl(control_param_input);
         }
         if (param.type.qualifiedName === "java.lang.Boolean") {
-            const param_input = new Input(socket_param_boolean, param.name);
+            const param_input = new Input(socket_param_boolean, param.name, param);
             node.addInput(param_input.id, param_input);
             const control_param_input = new BooleanCheckBoxControl({
                 value: false,
@@ -198,26 +286,60 @@ function buildInputOutputControl(editor, node, param) {
             });
             param_input.addControl(control_param_input);
         }
+        if (param.type.qualifiedName === "java.lang.String") {
+            const param_input = new Input(socket_param_string, param.name, param);
+            node.addInput(param_input.id, param_input);
+            const control_param_input = new StringInputControl({
+                value: false,
+                onChange: function (value) {
+                    this.value = value;
+                },
+                editor,
+                nodeId: node.id,
+                inputId: param_input.id
+            });
+            param_input.addControl(control_param_input);
+        }
+        if (param.type.qualifiedName === "java.util.List") {
+            const param_input = new Input(socket_param_list, param.name, param);
+            node.addInput(param_input.id, param_input);
+        }
+        if (param.type.qualifiedName === "java.util.Map") {
+            const param_input = new Input(socket_param_map, param.name, param);
+            node.addInput(param_input.id, param_input);
+        }
     } else {
         // 创建输出引脚
         if (param.type.qualifiedName === "java.lang.Integer") {
-            const data_output = new Output(socket_param_integer, param.name);
+            const data_output = new Output(socket_param_integer, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
         if (param.type.qualifiedName === "java.lang.Long") {
-            const data_output = new Output(socket_param_long, param.name);
+            const data_output = new Output(socket_param_long, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
         if (param.type.qualifiedName === "java.lang.Float") {
-            const data_output = new Output(socket_param_float, param.name);
+            const data_output = new Output(socket_param_float, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
         if (param.type.qualifiedName === "java.lang.Double") {
-            const data_output = new Output(socket_param_double, param.name);
+            const data_output = new Output(socket_param_double, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
         if (param.type.qualifiedName === "java.lang.Boolean") {
-            const data_output = new Output(socket_param_boolean, param.name);
+            const data_output = new Output(socket_param_boolean, param.name, param);
+            node.addOutput(data_output.id, data_output);
+        }
+        if (param.type.qualifiedName === "java.lang.String") {
+            const data_output = new Output(socket_param_string, param.name, param);
+            node.addOutput(data_output.id, data_output);
+        }
+        if (param.type.qualifiedName === "java.util.List") {
+            const data_output = new Output(socket_param_list, param.name, param);
+            node.addOutput(data_output.id, data_output);
+        }
+        if (param.type.qualifiedName === "java.util.Map") {
+            const data_output = new Output(socket_param_map, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
     }
@@ -226,32 +348,28 @@ function buildInputOutputControl(editor, node, param) {
 /**
  * 根据FunctionDefinition构造节点
  */
-function customNode(qualifiedName, editor) {
+function customNode(qualifiedName, editor, area) {
     if (qualifiedName.startsWith("Control.")) {
-        return createControlNode(qualifiedName, editor)
+        return createControlNode(qualifiedName, editor, area)
     } else {
-        const def = store.getters.findFunctionDef(qualifiedName);
-        if (def.executable) {
-            return createExecNode(qualifiedName, editor)
-        }
-        return createPureNode(qualifiedName, editor)
+        return createFunctionNode(qualifiedName, editor, area)
     }
 }
 
-function createControlNode(qualifiedName, editor) {
+function createControlNode(qualifiedName, editor, area) {
     const def = store.getters.findControlDef(qualifiedName);
     // 创建节点
-    const node = new Node(qualifiedName, def);
+    const node = new Node(qualifiedName, def, editor, area);
     // 执行引脚
     for (let i = 0; i < def.execPins.length; i++) {
         const param = def.execPins[i];
         if (param.input) {
             // 创建输入引脚
-            const exec_input = new Input(socket_exec, param.name);
+            const exec_input = new Input(socket_exec, param.name, param);
             node.addInput(exec_input.id, exec_input);
         } else {
             // 创建输出引脚
-            const exec_output = new Output(socket_exec, param.name);
+            const exec_output = new Output(socket_exec, param.name, param);
             node.addOutput(exec_output.id, exec_output);
         }
     }
@@ -263,14 +381,14 @@ function createControlNode(qualifiedName, editor) {
     return node;
 }
 
-function createExecNode(qualifiedName, editor) {
+function createFunctionNode(qualifiedName, editor, area) {
     const def = store.getters.findFunctionDef(qualifiedName);
     // 创建节点
-    const node = new Node(qualifiedName, def);
-    // 执行引脚
-    const exec_input = new Input(socket_exec);
+    const node = new Node(qualifiedName, def, editor, area);
+    // 执行引脚逻辑，具体根据def.executable决定是否可以双模式
+    const exec_input = new Input(socket_exec, "Exec", def);
     node.addInput(exec_input.id, exec_input);
-    const exec_output = new Output(socket_exec);
+    const exec_output = new Output(socket_exec, "Exec", def);
     node.addOutput(exec_output.id, exec_output);
 
     for (let i = 0; i < def.params.length; i++) {
@@ -280,19 +398,7 @@ function createExecNode(qualifiedName, editor) {
     return node;
 }
 
-function createPureNode(qualifiedName, editor) {
-    const def = store.getters.findFunctionDef(qualifiedName);
-    // 创建节点
-    const node = new Node(qualifiedName, def);
-    for (let i = 0; i < def.params.length; i++) {
-        const param = def.params[i];
-        buildInputOutputControl(editor, node, param)
-    }
-    return node;
-}
-
 export {
-    setupEditor,
-    initializeDefinition,
+    preSetupEditor,
     customNode
 }

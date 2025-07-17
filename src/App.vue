@@ -5,7 +5,7 @@
       <router-link to="/about">About</router-link> |
       <router-link to="/testEditor">测试编辑器</router-link>
     </nav>
-    <router-view/>
+    <router-view />
   </div>
 </template>
 
@@ -29,5 +29,13 @@ nav {
       color: #42b983;
     }
   }
+}
+
+.menu {
+  width: 200px !important;
+}
+
+.subitems {
+  width: 200px !important;
 }
 </style>

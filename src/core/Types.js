@@ -1,9 +1,10 @@
 import { ClassicPreset } from "rete";
 
 class Node extends ClassicPreset.Node {
-    constructor(label, meta = {}) {
+    // meta = FunctionDefinition
+    constructor(label, meta = {}, editor = undefined, area = undefined) {
         super(label);
-        Object.assign(this, { meta });
+        Object.assign(this, { meta, editor, area });
     }
 }
 
@@ -17,14 +18,16 @@ class Socket extends ClassicPreset.Socket {
 }
 
 class Input extends ClassicPreset.Input {
-    constructor(socket, label, multipleConnections = false) {
-        super(socket, label, multipleConnections);
+    constructor(socket, name, meta = {}) {
+        super(socket, name, false);
+        Object.assign(this, { meta });
     }
 }
 
 class Output extends ClassicPreset.Output {
-    constructor(socket, label, multipleConnections = false) {
-        super(socket, label, multipleConnections);
+    constructor(socket, name, meta = {}) {
+        super(socket, name, false);
+        Object.assign(this, { meta });
     }
 }
 
