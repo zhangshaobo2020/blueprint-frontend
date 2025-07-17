@@ -1,3 +1,5 @@
+import Vue from "vue";
+
 import { NodeEditor } from "rete";
 import { AreaPlugin, AreaExtensions } from "rete-area-plugin";
 import {
@@ -55,7 +57,7 @@ async function preSetupEditor(container) {
     store.commit("overrideControlDef", values[0].data);
     store.commit("overrideTypeDef", values[1].data);
     store.commit("overrideFunctionDef", values[2].data);
-    return setupEditor(container);
+    setupEditor(container);
 }
 
 /**
@@ -65,9 +67,15 @@ function setupEditor(container) {
     const editor = new NodeEditor();
     const area = new AreaPlugin(container);
     const connection = new ConnectionPlugin();
-    const render = new VuePlugin();
+    // const render = new VuePlugin();
+    // 将store注入到VuePlugin中
+    const render = new VuePlugin({
+        setup(context) {
+            return new Vue({ ...context, store });
+        },
+    });
 
-    const initializeDefinitionContextMenu = initializeDefinition(editor);
+    const initializeDefinitionContextMenu = initializeDefinition();
     const contextMenu = new ContextMenuPlugin({
         items: ContextMenuPresets.classic.setup(initializeDefinitionContextMenu)
     });
@@ -170,10 +178,12 @@ function setupEditor(container) {
         if (context.type === 'zoom' && context.data.source === 'dblclick') return
         return context
     })
-    return { editor, area };
+    // 将editor和area存入store
+    store.commit("overrideEditor", editor);
+    store.commit("overrideArea", area);
 }
 
-function buildNestedStructure(arr, editor) {
+function buildNestedStructure(arr) {
     const root = [];
 
     // 在 children 中查找节点，如果没有则创建
@@ -195,7 +205,7 @@ function buildNestedStructure(arr, editor) {
 
             if (isLeaf) {
                 // 叶子节点绑定 customNode("完整路径")
-                current.push([part, () => customNode(path, editor)]);
+                current.push([part, () => customNode(path)]);
             } else {
                 const node = findOrCreateNode(current, part);
                 current = node[1]; // 下钻到子数组
@@ -209,11 +219,15 @@ function buildNestedStructure(arr, editor) {
 /**
  * TODO: 初始化type和function
  */
-function initializeDefinition(editor) {
-    return buildNestedStructure(Object.keys(store.getters.functionDef).map(k => k), editor);
+function initializeDefinition() {
+    const typeDefs = buildNestedStructure(Object.keys(store.getters.controlDef).map(k => k));
+    const functionDefs = buildNestedStructure(Object.keys(store.getters.functionDef).map(k => k));
+    const definitions = [...typeDefs, ...functionDefs];
+    return definitions;
 }
 
-function buildInputOutputControl(editor, node, param) {
+function buildInputOutputControl(node, param) {
+    const editor = store.getters.editor;
     if (param.input) {
         // 创建输入引脚、控制
         if (param.type.qualifiedName === "java.lang.Integer") {
@@ -348,18 +362,18 @@ function buildInputOutputControl(editor, node, param) {
 /**
  * 根据FunctionDefinition构造节点
  */
-function customNode(qualifiedName, editor, area) {
-    if (qualifiedName.startsWith("Control.")) {
-        return createControlNode(qualifiedName, editor, area)
+function customNode(qualifiedName) {
+    if (qualifiedName.startsWith("CONTROL.")) {
+        return createControlNode(qualifiedName)
     } else {
-        return createFunctionNode(qualifiedName, editor, area)
+        return createFunctionNode(qualifiedName)
     }
 }
 
-function createControlNode(qualifiedName, editor, area) {
+function createControlNode(qualifiedName) {
     const def = store.getters.findControlDef(qualifiedName);
     // 创建节点
-    const node = new Node(qualifiedName, def, editor, area);
+    const node = new Node(qualifiedName, def);
     // 执行引脚
     for (let i = 0; i < def.execPins.length; i++) {
         const param = def.execPins[i];
@@ -376,15 +390,15 @@ function createControlNode(qualifiedName, editor, area) {
     // 数据引脚
     for (let i = 0; i < def.paramPins.length; i++) {
         const param = def.paramPins[i].paramDef;
-        buildInputOutputControl(editor, node, param)
+        buildInputOutputControl(node, param)
     }
     return node;
 }
 
-function createFunctionNode(qualifiedName, editor, area) {
+function createFunctionNode(qualifiedName) {
     const def = store.getters.findFunctionDef(qualifiedName);
     // 创建节点
-    const node = new Node(qualifiedName, def, editor, area);
+    const node = new Node(qualifiedName, def);
     // 执行引脚逻辑，具体根据def.executable决定是否可以双模式
     const exec_input = new Input(socket_exec, "Exec", def);
     node.addInput(exec_input.id, exec_input);
@@ -393,7 +407,7 @@ function createFunctionNode(qualifiedName, editor, area) {
 
     for (let i = 0; i < def.params.length; i++) {
         const param = def.params[i];
-        buildInputOutputControl(editor, node, param)
+        buildInputOutputControl(node, param)
     }
     return node;
 }

@@ -5,11 +5,19 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
+    editor: undefined,
+    area: undefined,
     typeDef: {},
     functionDef: {},
     controlDef: {}
   },
   getters: {
+    editor(state) {
+      return state.editor
+    },
+    area(state) {
+      return state.area
+    },
     typeDef(state) {
       return state.typeDef
     },
@@ -30,6 +38,12 @@ export default new Vuex.Store({
     },
   },
   mutations: {
+    overrideEditor(state, payload) {
+      state.editor = payload
+    },
+    overrideArea(state, payload) {
+      state.area = payload
+    },
     overrideTypeDef(state, payload) {
       state.typeDef = payload
     },

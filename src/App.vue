@@ -37,5 +37,7 @@ nav {
 
 .subitems {
   width: 200px !important;
+  max-height: 300px !important;
+  overflow-y: auto;
 }
 </style>

@@ -8,11 +8,16 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 export default {
   name: "Component-IntegerInput",
   props: ["data"],
   created() { },
   computed: {
+    ...mapGetters([
+      'editor',
+      'area',
+    ]),
     value: {
       get() {
         return this.data.value;
@@ -25,7 +30,7 @@ export default {
       this.data.onChange(val);
     },
     doesInputConnected() {
-      for (const connection of this.data.editor.getConnections()) {
+      for (const connection of this.editor.getConnections()) {
         if (
           connection.target === this.data.nodeId &&
           connection.targetInput === this.data.inputId

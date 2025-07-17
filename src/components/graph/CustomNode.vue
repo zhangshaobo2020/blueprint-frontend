@@ -2,10 +2,11 @@
   <div class="node" :class="{ selected: data.selected }" :style="nodeStyles()" data-testid="node">
     <div class="title" data-testid="title">
       <el-tooltip effect="dark" :content="data.meta.description" placement="top">
-        <span v-show="data.meta.description" style="color: grey;"><i class="el-icon-question"></i></span>
+        <span v-if="data.meta.description" style="color: grey;"><i class="el-icon-question"></i></span>
       </el-tooltip>
       <span style="font-weight: bold;">{{ data.meta.displayName || data.meta.name }}</span>
-      <span v-if="data.meta.category !== 'Control'" style="color: grey;" @pointerdown.stop @click="changeExecSwitch">
+      <span v-if="data.meta.category !== 'CONTROL' && data.meta.executable" style="color: grey;" @pointerdown.stop
+        @click="changeExecSwitch">
         <i class="el-icon-refresh"></i>
       </span>
     </div>
@@ -13,7 +14,7 @@
       <div class="column">
         <!-- Inputs-->
         <div class="input" v-for="[key, input] in inputs()" :key="key + seed" :data-testid="'input-' + key">
-          <template v-if="data.meta.category === 'Control'">
+          <template v-if="shouldRenderInput(input)">
             <Ref class="input-socket" :emit="emit" :data="{
               type: 'socket',
               side: 'input',
@@ -21,7 +22,8 @@
               nodeId: data.id,
               payload: input.socket,
             }" data-testid="input-socket" />
-            <el-tooltip effect="light" :content="pinTypeTooltip(input)" placement="top">
+            <el-tooltip effect="light" :content="pinTypeTooltip(input)" placement="top"
+              :disabled="!pinTypeTooltip(input)">
               <div class="input-title" data-testid="input-title">
                 {{ input.label }}
               </div>
@@ -29,49 +31,14 @@
             <Ref class="input-control" v-show="input.control && input.showControl" :emit="emit"
               :data="{ type: 'control', payload: input.control }" data-testid="input-control" />
           </template>
-          <template v-else>
-            <template v-if="input.socket.name === 'SocketParam'">
-              <Ref class="input-socket" :emit="emit" :data="{
-                type: 'socket',
-                side: 'input',
-                key: key,
-                nodeId: data.id,
-                payload: input.socket,
-              }" data-testid="input-socket" />
-              <el-tooltip effect="light" :content="pinTypeTooltip(input)" placement="top">
-                <div class="input-title" data-testid="input-title">
-                  {{ input.label }}
-                </div>
-              </el-tooltip>
-              <Ref class="input-control" v-show="input.control && input.showControl" :emit="emit"
-                :data="{ type: 'control', payload: input.control }" data-testid="input-control" />
-            </template>
-            <template v-else>
-              <template v-if="execSwitch">
-                <Ref class="input-socket" :emit="emit" :data="{
-                  type: 'socket',
-                  side: 'input',
-                  key: key,
-                  nodeId: data.id,
-                  payload: input.socket,
-                }" data-testid="input-socket" />
-                <el-tooltip effect="light" :content="pinTypeTooltip(input)" placement="top">
-                  <div class="input-title" data-testid="input-title">
-                    {{ input.label }}
-                  </div>
-                </el-tooltip>
-                <Ref class="input-control" v-show="input.control && input.showControl" :emit="emit"
-                  :data="{ type: 'control', payload: input.control }" data-testid="input-control" />
-              </template>
-            </template>
-          </template>
         </div>
       </div>
       <div class="column">
         <!-- Outputs-->
         <div class="output" v-for="[key, output] in outputs()" :key="key + seed" :data-testid="'output-' + key">
-          <template v-if="data.meta.category === 'Control'">
-            <el-tooltip effect="light" :content="pinTypeTooltip(output)" placement="top">
+          <template v-if="shouldRenderOutput(output)">
+            <el-tooltip effect="light" :content="pinTypeTooltip(output)" placement="top"
+              :disabled="!pinTypeTooltip(output)">
               <div class="output-title" data-testid="output-title">
                 {{ output.label }}
               </div>
@@ -84,49 +51,15 @@
               payload: output.socket,
             }" data-testid="output-socket" />
           </template>
-          <template v-else>
-            <template v-if="output.socket.name === 'SocketParam'">
-              <el-tooltip effect="light" :content="pinTypeTooltip(output)" placement="top">
-                <div class="output-title" data-testid="output-title">
-                  {{ output.label }}
-                </div>
-              </el-tooltip>
-              <Ref class="output-socket" :emit="emit" :data="{
-                type: 'socket',
-                side: 'output',
-                key: key,
-                nodeId: data.id,
-                payload: output.socket,
-              }" data-testid="output-socket" />
-            </template>
-            <template v-else>
-              <template v-if="execSwitch">
-                <el-tooltip effect="light" :content="pinTypeTooltip(output)" placement="top">
-                  <div class="output-title" data-testid="output-title">
-                    {{ output.label }}
-                  </div>
-                </el-tooltip>
-                <Ref class="output-socket" :emit="emit" :data="{
-                  type: 'socket',
-                  side: 'output',
-                  key: key,
-                  nodeId: data.id,
-                  payload: output.socket,
-                }" data-testid="output-socket" />
-              </template>
-            </template>
-          </template>
         </div>
       </div>
-      <!-- Controls-->
-      <Ref class="control" v-for="[key, control] in controls()" :key="key + seed" :emit="emit"
-        :data="{ type: 'control', payload: control }" :data-testid="'control-' + key" />
     </div>
   </div>
 </template>
 
 <script>
 import { Ref } from "rete-vue-plugin/vue2";
+import { mapGetters } from 'vuex'
 
 function sortByIndex(entries) {
   entries.sort((a, b) => {
@@ -144,6 +77,28 @@ export default {
   components: {
     Ref,
   },
+  computed: {
+    ...mapGetters([
+      'editor',
+      'area',
+    ]),
+    shouldRenderInput() {
+      return (input) => {
+        if (this.data.meta.category === 'CONTROL') return true;
+        if (input.socket.name === 'SocketParam') return true;
+        if (this.data.meta.executable && this.execSwitch) return true;
+        return false;
+      };
+    },
+    shouldRenderOutput() {
+      return (output) => {
+        if (this.data.meta.category === 'CONTROL') return true;
+        if (output.socket.name === 'SocketParam') return true;
+        if (this.data.meta.executable && this.execSwitch) return true;
+        return false;
+      };
+    },
+  },
   data() {
     return {
       execSwitch: false
@@ -154,7 +109,14 @@ export default {
     changeExecSwitch() {
       this.execSwitch = !this.execSwitch;
       // TODO: 如果是true变false, 要清空相关的connection
-      this.data.area && this.data.area.update('node', this.data.id);
+      this.editor.getConnections().forEach(conn => {
+        if (conn.source === this.data.id || conn.target === this.data.id) {
+          this.$nextTick(async () => {
+            await this.editor.removeConnection(conn.id);
+            await this.area.update('node', this.data.id);
+          });
+        }
+      });
     },
     removePrefixClassName(className) {
       return className.split(".").pop();
