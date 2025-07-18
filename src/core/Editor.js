@@ -373,7 +373,7 @@ function customNode(qualifiedName) {
 function createControlNode(qualifiedName) {
     const def = store.getters.findControlDef(qualifiedName);
     // 创建节点
-    const node = new Node(qualifiedName, def);
+    const node = new Node(qualifiedName, def, true);
     // 执行引脚
     for (let i = 0; i < def.execPins.length; i++) {
         const param = def.execPins[i];
@@ -398,7 +398,7 @@ function createControlNode(qualifiedName) {
 function createFunctionNode(qualifiedName) {
     const def = store.getters.findFunctionDef(qualifiedName);
     // 创建节点
-    const node = new Node(qualifiedName, def);
+    const node = new Node(qualifiedName, def, false);
     // 执行引脚逻辑，具体根据def.executable决定是否可以双模式
     const exec_input = new Input(socket_exec, "Exec", def);
     node.addInput(exec_input.id, exec_input);

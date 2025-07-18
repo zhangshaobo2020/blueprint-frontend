@@ -2,9 +2,10 @@ import { ClassicPreset } from "rete";
 
 class Node extends ClassicPreset.Node {
     // meta = FunctionDefinition
-    constructor(label, meta = {}) {
+    constructor(label, meta = {}, hasExec = false) {
         super(label);
         this.meta = meta;
+        this.hasExec = hasExec;
     }
 }
 

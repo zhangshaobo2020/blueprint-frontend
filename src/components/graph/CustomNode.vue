@@ -2,11 +2,13 @@
   <div class="node" :class="{ selected: data.selected }" :style="nodeStyles()" data-testid="node">
     <div class="title" data-testid="title">
       <el-tooltip effect="dark" :content="data.meta.description" placement="top">
-        <span v-if="data.meta.description" style="color: grey;"><i class="el-icon-question"></i></span>
+        <span v-if="data.meta.description" style="color: grey"><i class="el-icon-question"></i></span>
       </el-tooltip>
-      <span style="font-weight: bold;">{{ data.meta.displayName || data.meta.name }}</span>
-      <span v-if="data.meta.category !== 'CONTROL' && data.meta.executable" style="color: grey;" @pointerdown.stop
-        @click="changeExecSwitch">
+      <span style="font-weight: bold">{{
+        data.meta.displayName || data.meta.name
+      }}</span>
+      <span v-if="data.meta.category !== 'CONTROL' && data.meta.executable" style="color: grey" @pointerdown.stop
+        @click="changeHasExec">
         <i class="el-icon-refresh"></i>
       </span>
     </div>
@@ -59,7 +61,7 @@
 
 <script>
 import { Ref } from "rete-vue-plugin/vue2";
-import { mapGetters } from 'vuex'
+import { mapGetters } from "vuex";
 
 function sortByIndex(entries) {
   entries.sort((a, b) => {
@@ -78,44 +80,37 @@ export default {
     Ref,
   },
   computed: {
-    ...mapGetters([
-      'editor',
-      'area',
-    ]),
+    ...mapGetters(["editor", "area"]),
     shouldRenderInput() {
       return (input) => {
-        if (this.data.meta.category === 'CONTROL') return true;
-        if (input.socket.name === 'SocketParam') return true;
-        if (this.data.meta.executable && this.execSwitch) return true;
+        if (this.data.meta.category === "CONTROL") return true;
+        if (input.socket.name === "SocketParam") return true;
+        if (this.data.meta.executable && this.data.hasExec) return true;
         return false;
       };
     },
     shouldRenderOutput() {
       return (output) => {
-        if (this.data.meta.category === 'CONTROL') return true;
-        if (output.socket.name === 'SocketParam') return true;
-        if (this.data.meta.executable && this.execSwitch) return true;
+        if (this.data.meta.category === "CONTROL") return true;
+        if (output.socket.name === "SocketParam") return true;
+        if (this.data.meta.executable && this.data.hasExec) return true;
         return false;
       };
     },
   },
-  data() {
-    return {
-      execSwitch: false
-    }
-  },
   mounted() { },
   methods: {
-    changeExecSwitch() {
-      this.execSwitch = !this.execSwitch;
-      // TODO: 如果是true变false, 要清空相关的connection
-      this.editor.getConnections().forEach(conn => {
-        if (conn.source === this.data.id || conn.target === this.data.id) {
-          this.$nextTick(async () => {
-            await this.editor.removeConnection(conn.id);
-            await this.area.update('node', this.data.id);
-          });
-        }
+    changeHasExec() {
+      this.$nextTick(async () => {
+        this.$set(this.data, "hasExec", !this.data.hasExec);
+        this.editor.getConnections().forEach((conn) => {
+          if (conn.source === this.data.id || conn.target === this.data.id) {
+            this.$nextTick(async () => {
+              await this.editor.removeConnection(conn.id);
+            });
+          }
+        });
+        await this.area.update("node", this.data.id);
       });
     },
     removePrefixClassName(className) {
@@ -125,18 +120,24 @@ export default {
       if (pin && pin.meta && pin.meta.type) {
         if (pin.meta.type.list) {
           const List = this.removePrefixClassName(pin.meta.type.qualifiedName);
-          const T = this.removePrefixClassName(pin.meta.type.generics[0].qualifiedName);
+          const T = this.removePrefixClassName(
+            pin.meta.type.generics[0].qualifiedName
+          );
           return `${List}<${T}>`;
         } else if (pin.meta.type.map) {
           const Map = this.removePrefixClassName(pin.meta.type.qualifiedName);
-          const K = this.removePrefixClassName(pin.meta.type.generics[0].qualifiedName);
-          const V = this.removePrefixClassName(pin.meta.type.generics[1].qualifiedName);
+          const K = this.removePrefixClassName(
+            pin.meta.type.generics[0].qualifiedName
+          );
+          const V = this.removePrefixClassName(
+            pin.meta.type.generics[1].qualifiedName
+          );
           return `${Map}<${K}, ${V}>`;
         } else {
           return pin.meta.type.qualifiedName;
         }
       }
-      return ""
+      return "";
     },
     nodeStyles() {
       return {
