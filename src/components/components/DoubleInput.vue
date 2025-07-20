@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-input-number style="width: 100px" placeholder="请输入" controls-position="right" @change="onChange"
+    <el-input-number style="width: 80px" :controls="false" placeholder="请输入" @change="onChange"
       @pointerdown.native.stop v-model="value" :disabled="doesInputConnected()" v-show="!doesInputConnected()">
     </el-input-number>
   </div>

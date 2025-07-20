@@ -33,11 +33,16 @@ nav {
 
 .menu {
   width: 200px !important;
+  text-align: left !important;
 }
 
 .subitems {
   width: 200px !important;
   max-height: 300px !important;
   overflow-y: auto;
+}
+
+.el-popover--plain {
+  padding: 5px !important;
 }
 </style>

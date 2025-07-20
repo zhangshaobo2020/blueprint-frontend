@@ -1,9 +1,10 @@
 <template>
   <div class="node" :class="{ selected: data.selected }" :style="nodeStyles()" data-testid="node">
     <div class="title" data-testid="title">
-      <el-tooltip effect="dark" :content="data.meta.description" placement="top">
-        <span v-if="data.meta.description" style="color: grey"><i class="el-icon-question"></i></span>
-      </el-tooltip>
+      <el-popover placement="top" :title="`名称：${data.meta.name}`" width="200" trigger="click"
+        :content="`描述：${data.meta.description}`">
+        <span slot="reference" style="color: grey" @pointerdown.stop><i class="el-icon-question"></i></span>
+      </el-popover>
       <span style="font-weight: bold">{{
         data.meta.displayName || data.meta.name
       }}</span>
@@ -39,6 +40,9 @@
         <!-- Outputs-->
         <div class="output" v-for="[key, output] in outputs()" :key="key + seed" :data-testid="'output-' + key">
           <template v-if="shouldRenderOutput(output)">
+            <!-- Output上不设置controls -->
+            <!-- <Ref class="output-control" v-show="output.control && output.showControl" :emit="emit"
+              :data="{ type: 'control', payload: output.control }" data-testid="output-control" /> -->
             <el-tooltip effect="light" :content="pinTypeTooltip(output)" placement="top"
               :disabled="!pinTypeTooltip(output)">
               <div class="output-title" data-testid="output-title">
@@ -134,7 +138,7 @@ export default {
           );
           return `${Map}<${K}, ${V}>`;
         } else {
-          return pin.meta.type.qualifiedName;
+          return this.removePrefixClassName(pin.meta.type.qualifiedName);
         }
       }
       return "";
@@ -285,8 +289,14 @@ export default {
 
   .input-control {
     overflow: hidden;
-    padding: 2px;
-    margin-left: 5px;
+    padding: 0px;
+    margin-left: 2px;
+  }
+
+  .output-control {
+    overflow: hidden;
+    padding: 0px;
+    margin-right: 2px;
   }
 
   .columns {

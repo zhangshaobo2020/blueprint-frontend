@@ -227,7 +227,6 @@ function initializeDefinition() {
 }
 
 function buildInputOutputControl(node, param) {
-    const editor = store.getters.editor;
     if (param.input) {
         // 创建输入引脚、控制
         if (param.type.qualifiedName === "java.lang.Integer") {
@@ -238,7 +237,6 @@ function buildInputOutputControl(node, param) {
                 onChange: function (value) {
                     this.value = value;
                 },
-                editor,
                 nodeId: node.id,
                 inputId: param_input.id
             });
@@ -252,7 +250,6 @@ function buildInputOutputControl(node, param) {
                 onChange: function (value) {
                     this.value = value;
                 },
-                editor,
                 nodeId: node.id,
                 inputId: param_input.id
             });
@@ -266,7 +263,6 @@ function buildInputOutputControl(node, param) {
                 onChange: function (value) {
                     this.value = value;
                 },
-                editor,
                 nodeId: node.id,
                 inputId: param_input.id
             });
@@ -280,7 +276,6 @@ function buildInputOutputControl(node, param) {
                 onChange: function (value) {
                     this.value = value;
                 },
-                editor,
                 nodeId: node.id,
                 inputId: param_input.id
             });
@@ -294,7 +289,6 @@ function buildInputOutputControl(node, param) {
                 onChange: function (value) {
                     this.value = value;
                 },
-                editor,
                 nodeId: node.id,
                 inputId: param_input.id
             });
@@ -308,7 +302,6 @@ function buildInputOutputControl(node, param) {
                 onChange: function (value) {
                     this.value = value;
                 },
-                editor,
                 nodeId: node.id,
                 inputId: param_input.id
             });
@@ -317,10 +310,12 @@ function buildInputOutputControl(node, param) {
         if (param.type.qualifiedName === "java.util.List") {
             const param_input = new Input(socket_param_list, param.name, param);
             node.addInput(param_input.id, param_input);
+            // TODO: 需要实现List的输入控制
         }
         if (param.type.qualifiedName === "java.util.Map") {
             const param_input = new Input(socket_param_map, param.name, param);
             node.addInput(param_input.id, param_input);
+            // TODO: 需要实现Map的输入控制
         }
     } else {
         // 创建输出引脚
@@ -373,8 +368,8 @@ function customNode(qualifiedName) {
 function createControlNode(qualifiedName) {
     const def = store.getters.findControlDef(qualifiedName);
     // 创建节点
-    const node = new Node(qualifiedName, def, true);
-    // 执行引脚
+    const node = new Node(qualifiedName, { ...def, params: [] }, true);
+    // Control节点的执行引脚
     for (let i = 0; i < def.execPins.length; i++) {
         const param = def.execPins[i];
         if (param.input) {
@@ -387,7 +382,8 @@ function createControlNode(qualifiedName) {
             node.addOutput(exec_output.id, exec_output);
         }
     }
-    // 数据引脚
+
+    // Control节点的数据引脚
     for (let i = 0; i < def.paramPins.length; i++) {
         const param = def.paramPins[i].paramDef;
         buildInputOutputControl(node, param)
@@ -398,13 +394,14 @@ function createControlNode(qualifiedName) {
 function createFunctionNode(qualifiedName) {
     const def = store.getters.findFunctionDef(qualifiedName);
     // 创建节点
-    const node = new Node(qualifiedName, def, false);
-    // 执行引脚逻辑，具体根据def.executable决定是否可以双模式
-    const exec_input = new Input(socket_exec, "Exec", def);
+    const node = new Node(qualifiedName, { ...def, params: [] }, false);
+    // Function节点的执行引脚：动态显示或隐藏
+    const exec_input = new Input(socket_exec, "Exec", {});
     node.addInput(exec_input.id, exec_input);
-    const exec_output = new Output(socket_exec, "Exec", def);
+    const exec_output = new Output(socket_exec, "Exec", {});
     node.addOutput(exec_output.id, exec_output);
 
+    // Function节点的执行引脚
     for (let i = 0; i < def.params.length; i++) {
         const param = def.params[i];
         buildInputOutputControl(node, param)
