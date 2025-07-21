@@ -20,14 +20,14 @@ class Socket extends ClassicPreset.Socket {
 
 class Input extends ClassicPreset.Input {
     constructor(socket, name, meta = {}) {
-        super(socket, name, false);
+        super(socket, name, true);
         this.meta = meta;
     }
 }
 
 class Output extends ClassicPreset.Output {
     constructor(socket, name, meta = {}) {
-        super(socket, name, false);
+        super(socket, name, true);
         this.meta = meta;
     }
 }

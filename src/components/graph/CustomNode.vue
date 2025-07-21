@@ -250,7 +250,7 @@ export default {
   .title {
     white-space: nowrap;
     // background: radial-gradient(50% 90%, #3f80c39e 0%, transparent 80%);
-    font-size: 20px;
+    font-size: 18px;
     padding: 5px;
     border-radius: 15px 15px 0 0;
     text-align: center;
@@ -267,7 +267,7 @@ export default {
 
   .input-title,
   .output-title {
-    font-size: 12px;
+    font-size: 10px;
     font-weight: bold;
     text-overflow: ellipsis;
     overflow: hidden;
