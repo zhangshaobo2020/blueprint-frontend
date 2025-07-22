@@ -1,6 +1,7 @@
 <template>
   <div>
     <el-button type="primary" @click="showJson">JSON</el-button>
+    <el-button type="primary" @click="compileTest">测试</el-button>
     <div ref="TestEditor" style="width: 100%; height: 90vh"></div>
   </div>
 </template>
@@ -8,6 +9,7 @@
 <script>
 import { preSetupEditor } from "@/core/Editor";
 import { mapGetters } from "vuex";
+import * as CompileApi from "@/api/BlueprintCompileApi";
 
 export default {
   name: "TestEditor",
@@ -30,6 +32,12 @@ export default {
       console.log("============================");
       console.log(JSON.stringify(json2, null, 2));
     },
+    async compileTest() {
+      const nodes = this.editor.getNodes();
+      const connections = this.editor.getConnections();
+      const { data } = await CompileApi.compileTest({ nodes, connections });
+      console.log(data);
+    }
   },
 };
 </script>

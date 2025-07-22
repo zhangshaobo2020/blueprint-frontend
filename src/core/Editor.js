@@ -48,6 +48,8 @@ const socket_param_string = new Socket("SocketParam", "#8E44AD");
 const socket_param_list = new Socket("SocketParam", "#0040ff");
 const socket_param_map = new Socket("SocketParam", "#bb00ff");
 
+const socket_param_object = new Socket("SocketParam", "#000000");
+
 async function preSetupEditor(container) {
     const values = await Promise.all([
         GlobalApi.controlDefinition(),
@@ -242,7 +244,7 @@ function buildInputOutputControl(node, param) {
             });
             param_input.addControl(control_param_input);
         }
-        if (param.type.qualifiedName === "java.lang.Long") {
+        else if (param.type.qualifiedName === "java.lang.Long") {
             const param_input = new Input(socket_param_long, param.name, param);
             node.addInput(param_input.id, param_input);
             const control_param_input = new LongInputControl({
@@ -255,7 +257,7 @@ function buildInputOutputControl(node, param) {
             });
             param_input.addControl(control_param_input);
         }
-        if (param.type.qualifiedName === "java.lang.Float") {
+        else if (param.type.qualifiedName === "java.lang.Float") {
             const param_input = new Input(socket_param_float, param.name, param);
             node.addInput(param_input.id, param_input);
             const control_param_input = new FloatInputControl({
@@ -268,7 +270,7 @@ function buildInputOutputControl(node, param) {
             });
             param_input.addControl(control_param_input);
         }
-        if (param.type.qualifiedName === "java.lang.Double") {
+        else if (param.type.qualifiedName === "java.lang.Double") {
             const param_input = new Input(socket_param_double, param.name, param);
             node.addInput(param_input.id, param_input);
             const control_param_input = new DoubleInputControl({
@@ -281,7 +283,7 @@ function buildInputOutputControl(node, param) {
             });
             param_input.addControl(control_param_input);
         }
-        if (param.type.qualifiedName === "java.lang.Boolean") {
+        else if (param.type.qualifiedName === "java.lang.Boolean") {
             const param_input = new Input(socket_param_boolean, param.name, param);
             node.addInput(param_input.id, param_input);
             const control_param_input = new BooleanCheckBoxControl({
@@ -294,11 +296,11 @@ function buildInputOutputControl(node, param) {
             });
             param_input.addControl(control_param_input);
         }
-        if (param.type.qualifiedName === "java.lang.String") {
+        else if (param.type.qualifiedName === "java.lang.String") {
             const param_input = new Input(socket_param_string, param.name, param);
             node.addInput(param_input.id, param_input);
             const control_param_input = new StringInputControl({
-                value: false,
+                value: "",
                 onChange: function (value) {
                     this.value = value;
                 },
@@ -307,15 +309,20 @@ function buildInputOutputControl(node, param) {
             });
             param_input.addControl(control_param_input);
         }
-        if (param.type.qualifiedName === "java.util.List") {
+        else if (param.type.qualifiedName === "java.util.List") {
             const param_input = new Input(socket_param_list, param.name, param);
             node.addInput(param_input.id, param_input);
             // TODO: 需要实现List的输入控制
         }
-        if (param.type.qualifiedName === "java.util.Map") {
+        else if (param.type.qualifiedName === "java.util.Map") {
             const param_input = new Input(socket_param_map, param.name, param);
             node.addInput(param_input.id, param_input);
             // TODO: 需要实现Map的输入控制
+        }
+        else {
+            // 走到这里就是自定义类型
+            const param_input = new Input(socket_param_object, param.name, param);
+            node.addInput(param_input.id, param_input);
         }
     } else {
         // 创建输出引脚
@@ -323,32 +330,37 @@ function buildInputOutputControl(node, param) {
             const data_output = new Output(socket_param_integer, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
-        if (param.type.qualifiedName === "java.lang.Long") {
+        else if (param.type.qualifiedName === "java.lang.Long") {
             const data_output = new Output(socket_param_long, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
-        if (param.type.qualifiedName === "java.lang.Float") {
+        else if (param.type.qualifiedName === "java.lang.Float") {
             const data_output = new Output(socket_param_float, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
-        if (param.type.qualifiedName === "java.lang.Double") {
+        else if (param.type.qualifiedName === "java.lang.Double") {
             const data_output = new Output(socket_param_double, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
-        if (param.type.qualifiedName === "java.lang.Boolean") {
+        else if (param.type.qualifiedName === "java.lang.Boolean") {
             const data_output = new Output(socket_param_boolean, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
-        if (param.type.qualifiedName === "java.lang.String") {
+        else if (param.type.qualifiedName === "java.lang.String") {
             const data_output = new Output(socket_param_string, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
-        if (param.type.qualifiedName === "java.util.List") {
+        else if (param.type.qualifiedName === "java.util.List") {
             const data_output = new Output(socket_param_list, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
-        if (param.type.qualifiedName === "java.util.Map") {
+        else if (param.type.qualifiedName === "java.util.Map") {
             const data_output = new Output(socket_param_map, param.name, param);
+            node.addOutput(data_output.id, data_output);
+        }
+        else {
+            // 走到这里就是自定义类型
+            const data_output = new Output(socket_param_object, param.name, param);
             node.addOutput(data_output.id, data_output);
         }
     }

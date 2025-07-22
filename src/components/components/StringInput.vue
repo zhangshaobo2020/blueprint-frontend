@@ -1,6 +1,6 @@
 <template>
-  <el-input @input="onChange" @pointerdown.native.stop v-model="value" :disabled="doesInputConnected()"
-    v-show="!doesInputConnected()">
+  <el-input style="width: 80px" @input="onChange" @pointerdown.native.stop v-model="value"
+    :disabled="doesInputConnected()" v-show="!doesInputConnected()">
   </el-input>
 </template>
 
